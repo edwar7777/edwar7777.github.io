@@ -22,26 +22,24 @@ I never try it. Some discussions in [NFS export of unsupported filesystems (e.g.
 
 
 ### NAT + static-port, in FreeBSD PF
-Add 'static-port' in pf.conf, the configuration file of FreeBSD PF program. The option keeps source port number unchanged.
+Add 'static-port' for *nat* in pf.conf, the configuration file of FreeBSD PF program. The option keeps source port number unchanged.
 
 /etc/pf.conf:
-
-	set skip on lo0
-	set block-policy return
-	scrub in all
 
 	ext_if="em0"
 	int_if="em1"
 	nat  on $ext_if inet  from $int_if:network to any -> ($ext_if) static-port
 
-	pass in all
-	pass out all
-
-In my first try with 4 NFS clients, the first 2 client are disconnected after the 3rd and the 4th mount the NFS.
+In my first try with 4 NFS clients (Solaris 8), the first 2 clients lose server responses after the 3rd and the 4th client mount the NFS.
 A very bad instance may occur: all clients use the same port.
 
 
-### NAT + round-robin priviledged ports, in FreeBSD PF
+### NAT + priviledged ports, in FreeBSD PF
+
+Add an extra *nat* with priviledged ports before the ordinary *nat* statement:
+
+	 nat on $ext_if inet  from $lan_nfs_cli    to $mainnas -> ($ext_if) port 111:1023
+	 nat on $ext_if inet  from $int_if:network to any      -> ($ext_if)
 
 
 
