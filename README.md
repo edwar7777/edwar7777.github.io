@@ -26,10 +26,10 @@ I never successed to use NFS-ganesha proxy FSAL to access NFS outside the workst
 ### NAT + round-robin priviledged ports, in FreeBSD PF
 
 # References
-* [NFS server behind a PF firewall](http://blog.e-shell.org/227) via Google:\<nfs client behind nat>
-* [Mount NFS export for machine behind a NAT](https://blog.bigon.be/2013/02/08/mount-nfs-export-for-machine-behind-a-nat/) via google:\<nfs client behind nat>
+* [NFS server behind a PF firewall](http://blog.e-shell.org/227), via Google:\<nfs client behind nat>
+* [Mount NFS export for machine behind a NAT](https://blog.bigon.be/2013/02/08/mount-nfs-export-for-machine-behind-a-nat/), via google:\<nfs client behind nat>
 * 
-* [FreeBSD nat via PF: how to change from random UDP ports to incremental?](https://serverfault.com/questions/67249/freebsd-nat-via-pf-how-to-change-from-random-udp-ports-to-incremental) via google:\<pf nat static-port>
-* [6.6 pfctl: Invalid argument. when using add with some netmasks](http://openbsd-archive.7691.n7.nabble.com/6-6-pfctl-Invalid-argument-when-using-add-with-some-netmasks-td381455.html) via google:\<freebsd pf 192.168 become "64.168">
+* [FreeBSD nat via PF: how to change from random UDP ports to incremental?](https://serverfault.com/questions/67249/freebsd-nat-via-pf-how-to-change-from-random-udp-ports-to-incremental), via google:\<pf nat static-port>
+* [pfctl: Invalid argument. when using add with some netmasks](http://openbsd-archive.7691.n7.nabble.com/6-6-pfctl-Invalid-argument-when-using-add-with-some-netmasks-td381455.html), via google:\<freebsd pf 192.168 become "64.168">
 
 [//]: <> (__END__)
