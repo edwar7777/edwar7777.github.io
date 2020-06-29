@@ -1,4 +1,4 @@
-# NFS cross NAT
+# NFS clients behind NAT
 
 The NFS server is accessible in the intranet. Some clients behind the NAT are Sparc machines with Solaris 2.6 / 7 / 8 installed. Therefore, neither CIFS (Samba) mount nor NFSv4 can be adopted. The only option is NFS with version<=3.
 
@@ -14,7 +14,7 @@ The simplest solution is to turn on the 'insecure' option in /etc/exports of NFS
 
 
 ### NFS-proxy or re-export, like NFS-ganesha
-I do not have a successful NFS-ganesha proxy to access NFS outside the workstation for some errors. To debug it may beyond my capability.
+I did not have a successful NFS-ganesha proxy to access NFS outside the workstation for some errors (OS: CentOS 7). To debug it beyonds my capability, honestly.
 
 
 ### NAT + static-port in FreeBSD PF
