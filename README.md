@@ -13,22 +13,41 @@ After NAT, the source port usually >=1024, while NFS server may allow only privi
 The simplest solution is to turn on the 'insecure' option in /etc/exports of NFS servers if no other concern exists. The option 'insecure' makes the server permit source port >=1024.
 
 
-### NFS-proxy, like NFS-ganesha
-I never successed to use NFS-ganesha proxy FSAL to access NFS outside the workstation for some errors (OS: CentOS 7). To solve it beyonded my capability then, honestly.
+### NFS proxy, like NFS-ganesha
+I never success to use NFS-ganesha proxy FSAL to access NFS outside the workstation for some errors (OS: CentOS 7). To solve it beyonded my capability then, honestly.
 
 
-### NFS re-export, by user nfsd
-(never tried)
+### NFS re-export, by user mode nfs server, like unfsd
+I never try it. Some discussions in [NFS export of unsupported filesystems (e.g. NFS re-export)](https://groups.google.com/forum/#!topic/alt.os.linux/oXW6JjIcqAw) mention lock-down may occurs.
 
 
 ### NAT + static-port, in FreeBSD PF
+Add 'static-port' in pf.conf, the configuration file of FreeBSD PF program. The option keeps source port number unchanged.
+
+/etc/pf.conf:
+
+	set skip on lo0
+	set block-policy return
+	scrub in all
+
+	ext_if="em0"
+	int_if="em1"
+	nat  on $ext_if inet  from $int_if:network to any -> ($ext_if) static-port
+
+	pass in all
+	pass out all
+
+In my first try with 4 NFS clients, the first 2 client are disconnected after the 3rd and the 4th mount the NFS.
+A very bad instance may occur: all clients use the same port.
+
 
 ### NAT + round-robin priviledged ports, in FreeBSD PF
+
+
 
 # References
 * [NFS server behind a PF firewall](http://blog.e-shell.org/227), via Google:\<nfs client behind nat>
 * [Mount NFS export for machine behind a NAT](https://blog.bigon.be/2013/02/08/mount-nfs-export-for-machine-behind-a-nat/), via google:\<nfs client behind nat>
-* 
 * [FreeBSD nat via PF: how to change from random UDP ports to incremental?](https://serverfault.com/questions/67249/freebsd-nat-via-pf-how-to-change-from-random-udp-ports-to-incremental), via google:\<pf nat static-port>
 * [pfctl: Invalid argument. when using add with some netmasks](http://openbsd-archive.7691.n7.nabble.com/6-6-pfctl-Invalid-argument-when-using-add-with-some-netmasks-td381455.html), via google:\<freebsd pf 192.168 become "64.168">
 
