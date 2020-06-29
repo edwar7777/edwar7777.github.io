@@ -18,7 +18,7 @@ I never success to use NFS-ganesha proxy FSAL to access NFS outside the workstat
 
 
 ## NFS re-export, by user mode nfs server, like unfsd
-I never try it. Some discussions in [NFS export of unsupported filesystems (e.g. NFS re-export)](https://groups.google.com/forum/#!topic/alt.os.linux/oXW6JjIcqAw) mention lock-down may occurs.
+I never try it as some discussions in [NFS export of unsupported filesystems (e.g. NFS re-export)](https://groups.google.com/forum/#!topic/alt.os.linux/oXW6JjIcqAw) mention lock-down may occurs.
 
 
 ## NAT + static-port, in FreeBSD PF
