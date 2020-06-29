@@ -4,7 +4,7 @@ The NFS server is accessible in the intranet. Some clients behind the NAT are Sp
 
 The NAT runs on a workstation with FreeBSD or Linux. Routed or Bridged network is not preferred in order to make the clients invisible from the intranet.
 
-After NAT, the source port usually >=1024, while NFS server may not allow such source ports for security.
+After NAT, the source port usually >=1024, while NFS server may allow only priviledged source ports (port<1024).
 
 
 ## Approaches
@@ -13,10 +13,16 @@ After NAT, the source port usually >=1024, while NFS server may not allow such s
 The simplest solution is to turn on the 'insecure' option in /etc/exports of NFS servers if no other concern exists. The option 'insecure' makes the server permit source port >=1024.
 
 
-### NFS-proxy or re-export, like NFS-ganesha
-I did not have a successful NFS-ganesha proxy to access NFS outside the workstation for some errors (OS: CentOS 7). To debug it beyonds my capability, honestly.
+### NFS-proxy, like NFS-ganesha
+I never successed to use NFS-ganesha proxy FSAL to access NFS outside the workstation for some errors (OS: CentOS 7). To solve it beyonded my capability then, honestly.
 
 
-### NAT + static-port in FreeBSD PF
+### NFS re-export, by user nfsd
+(never tried)
 
-### NAT + round-robin in FreeBSD PF
+
+### NAT + static-port, in FreeBSD PF
+
+### NAT + round-robin priviledged ports, in FreeBSD PF
+
+# References
