@@ -7,21 +7,21 @@ The NAT runs on a workstation with FreeBSD or Linux. Routed or Bridged network i
 After NAT, the source port usually >=1024, while NFS server may allow only priviledged source ports (port<1024).
 
 
-## Approaches
+# Approaches
 
-### Option 'insecure' in /etc/exports
+## Option 'insecure' in /etc/exports
 The simplest solution is to turn on the 'insecure' option in /etc/exports of NFS servers if no other concern exists. The option 'insecure' makes the server permit source port >=1024.
 
 
-### NFS proxy, like NFS-ganesha
+## NFS proxy, like NFS-ganesha
 I never success to use NFS-ganesha proxy FSAL to access NFS outside the workstation for some errors (OS: CentOS 7). To solve it beyonded my capability then, honestly.
 
 
-### NFS re-export, by user mode nfs server, like unfsd
+## NFS re-export, by user mode nfs server, like unfsd
 I never try it. Some discussions in [NFS export of unsupported filesystems (e.g. NFS re-export)](https://groups.google.com/forum/#!topic/alt.os.linux/oXW6JjIcqAw) mention lock-down may occurs.
 
 
-### NAT + static-port, in FreeBSD PF
+## NAT + static-port, in FreeBSD PF
 Add 'static-port' for *nat* in pf.conf, the configuration file of FreeBSD PF program. The option keeps source port number unchanged.
 
 /etc/pf.conf:
@@ -34,7 +34,7 @@ In my first try with 4 NFS clients (Solaris 8), the first 2 clients lose server 
 A very bad instance may occur: all clients use the same port.
 
 
-### NAT + priviledged ports, in FreeBSD PF
+## NAT + priviledged ports, in FreeBSD PF
 
 Add an extra *nat* with priviledged ports before the ordinary *nat* statement:
 
