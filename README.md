@@ -47,22 +47,19 @@ The available source ports are mcuh less than the insecure option of NFS server.
 
 # An example for NAT + priviledged ports
 
-Use QEMU to test the idea.
+Network hierarchy
+* IP=192.168.2.11, NFS server
+* IP=192.168.2.12. NAT
+  - IP=192.168.1.10--13. NFS clients 1--4
+
+
+QEMU-4.1.0 was adopted to test the idea.
 * Host: FreeBSD 12.1
 * Guest 1: NFS server, Debian
-* Guest 2: NAT, FreeBSD 12.1
-* Guest 3-6: NFS clients, FreeBSD bootonly installation CD or Solaris 8 (Sparc)
+* Guest 2: NAT, FreeBSD 12.1-RELEASE.
+* Guest 3-6: NFS clients 1-4, by FreeBSD bootonly installation CD (12.1-RELEASE-amd64) or Solaris 8
 
-## Network hierarchy
-* IP=192.168.2.11, NFS server
-* IP=192.168.2.12. NAT running on FreeBSD workstation
-  - em0     (IP=192.168.2.12), for external communication
-  - bridge0 (IP=192.168.1.1),  for internal NFS clients
-    + IP=192.168.1.10. NFS client 1
-    + IP=192.168.1.11. NFS client 2
-    + IP=192.168.1.12. NFS client 3
-    + IP=192.168.1.13. NFS client 4
-
+Note: the _pfctl_ program of guest 2 FreeBSD may need to be build with -O0 option in early version of QEMU. Or 192.168.x.x will become 64.168.x.x and thus not work at all.
 
 
 # References
