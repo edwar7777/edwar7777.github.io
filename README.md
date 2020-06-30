@@ -22,7 +22,7 @@ I never try it as some discussions in [NFS export of unsupported filesystems (e.
 
 
 ## NAT + static-port, in FreeBSD PF
-Add 'static-port' for *nat* in pf.conf, the configuration file of FreeBSD PF program. The option keeps source port number unchanged.
+Add 'static-port' for _nat_ in pf.conf, the configuration file of FreeBSD PF program. The option keeps source port number unchanged.
 
 /etc/pf.conf:
 
@@ -35,7 +35,7 @@ A very bad instance may occur: all clients use the same port.
 
 
 ## NAT + priviledged ports, in FreeBSD PF
-Add an extra *nat* with priviledged ports before the ordinary *nat* statement:
+Add an extra _nat_ with priviledged ports before the ordinary _nat_ statement:
 
 	 lan_nfs_cli = "{ 192.168.1.10, 192.168.1.11, 192.168.1.12, 192.168.1.13 } port 111:1023"
 	 mainnas="192.168.2.11"
@@ -48,46 +48,135 @@ The available source ports are mcuh less than the insecure option of NFS server.
 # An example for NAT + priviledged ports
 
 Network hierarchy
+
 * IP=192.168.2.11, NFS server
 * IP=192.168.2.12. NAT
   - IP=192.168.1.10--13. NFS clients 1--4
 
+
 ## construct the hierarchy by QEMU
 
 QEMU-4.1.0 was adopted to test the idea.
+
 * Host: FreeBSD 12.1
 * Guest 1: NFS server, Debian
 * Guest 2: NAT, FreeBSD 12.1-RELEASE.
 * Guest 3-6: NFS clients 1-4, by FreeBSD bootonly installation CD (12.1-RELEASE-amd64) or Solaris 8
 
-Note: the `pfctl` program of guest 2 FreeBSD may need to be built with -O0 option to work in early version of QEMU, including QEMU-4.1.0. Or 192.168.x.x will become 64.168.x.x and thus not work at all. To build it elsewhere and transfer binary executable file into guest 2 is ok.
-
-Guest 2 is invoked by `qemu-x86_64 ... -nic socket,listen=:port`. `-nic socket` appears 4 times with different ports for guests 3-6. The action creates 4 network interfaces, em1-4, which then become child of a virtual bridge in guest 2.
-
 Guest 2 invocation:
 
-```
-qemu-system-x86_64 \
-       ...
-    -nic tap,ifname=tap2,mac=52:54:02:12:34:56 \
-    \
-    -nic socket,listen=:20001 \
-    -nic socket,listen=:20002 \
-    -nic socket,listen=:20003 \
-    -nic socket,listen=:20004 \
-      ...
-```
+	qemu-system-x86_64 \
+	       ...
+	    -nic tap,ifname=tap2 \
+	    -nic socket,listen=:20001 \
+	    -nic socket,listen=:20002 \
+	    -nic socket,listen=:20003 \
+	    -nic socket,listen=:20004 \
+	      ...
 
-Each of guests 3-6 is invoked by `qemu ... -nic socket,connect=127.0.0.1:port`. For qemu-sparc, `model=lance` can be inserted as an argument.
+`-nic socket` appears 4 times with different ports for guests 3-6. The action creates 4 network interfaces, em1-4, which then become members of a virtual bridge in guest 2.
+
+Note: the `pfctl` program of guest 2 FreeBSD may need to be built with -O0 option to work in early version of QEMU, including QEMU-4.1.0. Or 192.168.x.x will become 64.168.x.x and thus not work at all. To build it elsewhere and transfer binary executable file into guest 2 is ok.
+
+Guest 3 invocation:
+
+	qemu-system-x86_64 \
+	      ...
+	    -nic socket,connect=127.0.0.1:20001 \
+	    -cdrom ...
+	      ...
+
+Guest 4-6 are similar except port number of `connect=...`. For qemu-sparc, `model=lance` can be inserted as an argument if necessary.
 
 
-## Guest 2, NAT configuration
-I use bridge in guest 2
+## Guest 2, NAT configurations
+
+The following are related configurations.
+
+/boot/loader.conf, if you use bridge and tap.
+
+	if_bridge_load="YES"
+	if_tap_load="YES"
+
+/etc/rc.conf:
+
+	defaultrouter="192.168.2.1"
+	pf_enable="YES"
+	gateway_enable="YES"
+	
+	cloned_interfaces="bridge0"
+	ifconfig_bridge0="inet 192.168.1.1/24"
+	autobridge_interfaces="bridge0"
+	autobridge_bridge0="tap* em1 em2 em3 em4"
+	ifconfig_em1="inet 192.168.1.31/24"
+	ifconfig_em2="inet 192.168.1.32/24"
+	ifconfig_em3="inet 192.168.1.33/24"
+	ifconfig_em4="inet 192.168.1.34/24"
+	  ...
+
+The IP addresses for em1-4 are for dhcpd. Not a good setting because dhcpd blames on em1-4. But eventually it works. The gateway of guest 3-6 (192.168.1.10--13) is bridge0 (192.168.1.1). 
+
+/etc/pf.conf:
+
+	set skip on lo0
+	set block-policy return
+	scrub in all
+	
+	 ext_if="em0"
+	 int_if="bridge0"
+	 lan_nfs_cli = "{ 192.168.1.10, 192.168.1.11, 192.168.1.12, 192.168.1.13 } port 111:1023"
+	
+	 mainnas="192.168.2.11"
+	
+	 nat on $ext_if inet  from $lan_nfs_cli    to $mainnas -> ($ext_if) port 111:1023
+	 nat on $ext_if inet  from $int_if:network to any      -> ($ext_if)
+	
+	pass in all
+	pass out all
+
+
+## Check the result of NAT settings
+
+When I took the experiment, I was not sure the maximum of priviledged ports is 1023 or 1024. The correct one is 1023.
+
+All the results below were gotten when the port range was set to a wrong range 111:1024. 
+
+Check the rules of PF:
+
+	root@fbsd_pf:/mnt/t01-nfs # pfctl -sn; pfctl -sr
+	nat on em0 inet from 192.168.1.10 port 111:1024 to 192.168.2.11 -> (em0) port 111:1024 round-robin
+	nat on em0 inet from 192.168.1.11 port 111:1024 to 192.168.2.11 -> (em0) port 111:1024 round-robin
+	nat on em0 inet from 192.168.1.12 port 111:1024 to 192.168.2.11 -> (em0) port 111:1024 round-robin
+	nat on em0 inet from 192.168.1.13 port 111:1024 to 192.168.2.11 -> (em0) port 111:1024 round-robin
+	nat on em0 inet from 192.168.1.0/24 to any -> (em0) round-robin
+	nat on em0 inet from 192.168.1.0/24 to any -> (em0) round-robin
+	scrub in all fragment reassemble
+	pass in all flags S/SA keep state
+	pass out all flags S/SA keep state
+
+
+Check the translated results of NFS connections: 
+
+	root@fbsd_pf:/mnt/t01-nfs # pfctl -ss | sort | grep ESTA
+	all tcp 192.168.1.31:23452 -> 192.168.1.12:22       ESTABLISHED:ESTABLISHED
+	all tcp 192.168.2.11:2049 <- 192.168.1.10:1023       ESTABLISHED:ESTABLISHED
+	all tcp 192.168.2.11:2049 <- 192.168.1.11:1023       ESTABLISHED:ESTABLISHED
+	all tcp 192.168.2.11:2049 <- 192.168.1.12:1023       ESTABLISHED:ESTABLISHED
+	all tcp 192.168.2.11:2049 <- 192.168.1.13:1023       ESTABLISHED:ESTABLISHED
+	all tcp 192.168.2.12:127 (192.168.1.13:1023) -> 192.168.2.11:2049       ESTABLISHED:ESTABLISHED
+	all tcp 192.168.2.12:22 <- 192.168.2.1:35214       ESTABLISHED:ESTABLISHED
+	all tcp 192.168.2.12:22 <- 192.168.2.1:52419       ESTABLISHED:ESTABLISHED
+	all tcp 192.168.2.12:246 (192.168.1.10:1023) -> 192.168.2.11:2049       ESTABLISHED:ESTABLISHED
+	all tcp 192.168.2.12:654 (192.168.1.12:1023) -> 192.168.2.11:2049       ESTABLISHED:ESTABLISHED
+	all tcp 192.168.2.12:846 (192.168.1.11:1023) -> 192.168.2.11:2049       ESTABLISHED:ESTABLISHED
+
+It happened to be a case that all clients assign port 1023 as source port. After NAT, the source ports of NFS clients 1-4 are translated to 246, 846, 654 and 127 on em0 respectively.
+
 
 # References
-* [NFS server behind a PF firewall](http://blog.e-shell.org/227), via Google:\<nfs client behind nat>
-* [Mount NFS export for machine behind a NAT](https://blog.bigon.be/2013/02/08/mount-nfs-export-for-machine-behind-a-nat/), via google:\<nfs client behind nat>
-* [FreeBSD nat via PF: how to change from random UDP ports to incremental?](https://serverfault.com/questions/67249/freebsd-nat-via-pf-how-to-change-from-random-udp-ports-to-incremental), via google:\<pf nat static-port>
-* [pfctl: Invalid argument. when using add with some netmasks](http://openbsd-archive.7691.n7.nabble.com/6-6-pfctl-Invalid-argument-when-using-add-with-some-netmasks-td381455.html), via google:\<freebsd pf 192.168 become "64.168">
+* [NFS server behind a PF firewall](http://blog.e-shell.org/227), via Google:<nfs client behind nat\>
+* [Mount NFS export for machine behind a NAT](https://blog.bigon.be/2013/02/08/mount-nfs-export-for-machine-behind-a-nat/), via google:<nfs client behind nat\>
+* [FreeBSD nat via PF: how to change from random UDP ports to incremental?](https://serverfault.com/questions/67249/freebsd-nat-via-pf-how-to-change-from-random-udp-ports-to-incremental), via google:<pf nat static-port\>
+* [pfctl: Invalid argument. when using add with some netmasks](http://openbsd-archive.7691.n7.nabble.com/6-6-pfctl-Invalid-argument-when-using-add-with-some-netmasks-td381455.html), via google:<freebsd pf 192.168 become "64.168"\>
 
 [//]: <> (__END__)
