@@ -7,7 +7,7 @@ The NAT runs on a workstation with FreeBSD or Linux. Routed or Bridged network i
 After NAT, the source port usually >=1024, while NFS server may allow only priviledged source ports (port<1024).
 
 
-# Approaches
+# Possible approaches
 
 ## Option 'insecure' in /etc/exports
 The simplest solution is to turn on the 'insecure' option in /etc/exports of NFS servers if no other concern exists. The option 'insecure' makes the server permit source port >=1024.
@@ -35,12 +35,12 @@ A very bad instance may occur: all clients use the same port.
 
 
 ## NAT + priviledged ports, in FreeBSD PF
-
 Add an extra *nat* with priviledged ports before the ordinary *nat* statement:
 
+	 lan_nfs_cli = "{ 192.168.1.10, 192.168.1.11, 192.168.1.12, 192.168.1.13 } port 111:1024"
+	 mainnas="192.168.2.11"
 	 nat on $ext_if inet  from $lan_nfs_cli    to $mainnas -> ($ext_if) port 111:1023
 	 nat on $ext_if inet  from $int_if:network to any      -> ($ext_if)
-
 
 
 # References
