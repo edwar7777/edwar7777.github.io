@@ -37,10 +37,32 @@ A very bad instance may occur: all clients use the same port.
 ## NAT + priviledged ports, in FreeBSD PF
 Add an extra *nat* with priviledged ports before the ordinary *nat* statement:
 
-	 lan_nfs_cli = "{ 192.168.1.10, 192.168.1.11, 192.168.1.12, 192.168.1.13 } port 111:1024"
+	 lan_nfs_cli = "{ 192.168.1.10, 192.168.1.11, 192.168.1.12, 192.168.1.13 } port 111:1023"
 	 mainnas="192.168.2.11"
 	 nat on $ext_if inet  from $lan_nfs_cli    to $mainnas -> ($ext_if) port 111:1023
 	 nat on $ext_if inet  from $int_if:network to any      -> ($ext_if)
+
+The available source ports are mcuh less than the insecure option of NFS server. Thus this approach is suitable when the count of clients behind NAT is not large.
+
+
+# An example for NAT + priviledged ports
+
+Use QEMU to test the idea.
+* Host: FreeBSD 12.1
+* Guest 1: NFS server, Debian
+* Guest 2: NAT, FreeBSD 12.1
+* Guest 3-6: NFS clients, FreeBSD bootonly installation CD or Solaris 8 (Sparc)
+
+## Network hierarchy
+* IP=192.168.2.11, NFS server
+* IP=192.168.2.12. NAT running on FreeBSD workstation
+  - em0     (IP=192.168.2.12), for external communication
+  - bridge0 (IP=192.168.1.1),  for internal NFS clients
+    + IP=192.168.1.10. NFS client 1
+    + IP=192.168.1.11. NFS client 2
+    + IP=192.168.1.12. NFS client 3
+    + IP=192.168.1.13. NFS client 4
+
 
 
 # References
