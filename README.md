@@ -59,7 +59,11 @@ QEMU-4.1.0 was adopted to test the idea.
 * Guest 2: NAT, FreeBSD 12.1-RELEASE.
 * Guest 3-6: NFS clients 1-4, by FreeBSD bootonly installation CD (12.1-RELEASE-amd64) or Solaris 8
 
-Note: the _pfctl_ program of guest 2 FreeBSD may need to be build with -O0 option in early version of QEMU. Or 192.168.x.x will become 64.168.x.x and thus not work at all.
+Note: the _pfctl_ program of guest 2 FreeBSD may need to be built with -O0 option to work in early version of QEMU, including QEMU-4.1.0. Or 192.168.x.x will become 64.168.x.x and thus not work at all. To build it elsewhere and transfer binary executable file into geust 2 is ok.
+
+Guest 2 is invoked by `qemu-x86_64 ... -nic socket,listen=:port`. `-nic socket` appears 4 times with different ports for guests 3-6.
+
+Each of guests 3-6 is invoked by `qemu ... -nic socket,connect=127.0.0.1:port`. For qemu-sparc, `model=lance` can be inserted as an argument.
 
 
 # References
