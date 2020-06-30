@@ -65,7 +65,17 @@ Note: the `pfctl` program of guest 2 FreeBSD may need to be built with -O0 optio
 Guest 2 is invoked by `qemu-x86_64 ... -nic socket,listen=:port`. `-nic socket` appears 4 times with different ports for guests 3-6. The action creates 4 network interfaces, em1-4, which then become child of a virtual bridge in guest 2.
 
 Guest 2 invocation:
+
 ```
+qemu-system-x86_64 \
+       ...
+    -nic tap,ifname=tap2,mac=52:54:02:12:34:56 \
+    \
+    -nic socket,listen=:20001 \
+    -nic socket,listen=:20002 \
+    -nic socket,listen=:20003 \
+    -nic socket,listen=:20004 \
+      ...
 ```
 
 Each of guests 3-6 is invoked by `qemu ... -nic socket,connect=127.0.0.1:port`. For qemu-sparc, `model=lance` can be inserted as an argument.
