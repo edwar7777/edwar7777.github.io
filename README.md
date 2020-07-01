@@ -1,8 +1,8 @@
 # NFS clients behind NAT
 
-The NFS server is accessible in the intranet. Some clients behind the NAT are Sparc machines with Solaris 2.6 / 7 / 8 installed. Therefore, neither CIFS (Samba) mount nor NFSv4 can be adopted. The only option is NFS with version<=3.
+Scenario: The NFS server is accessible in the intranet. But some clients behind the NAT are Sparc machines with Solaris 2.6 / 7 / 8 installed. Therefore, neither CIFS (Samba) mount nor NFSv4 can be adopted. The only option is NFS with version<=3.
 
-The NAT runs on a workstation with FreeBSD or Linux. Routed or Bridged network is not preferred in order to make the clients invisible from the intranet.
+The NAT runs on a workstation with FreeBSD or Linux. Routed or Bridged network is not preferred in order to keep the clients invisible from the intranet.
 
 After NAT, the source port usually >=1024, while NFS server may allow only priviledged source ports (port<1024).
 
@@ -30,8 +30,7 @@ Add 'static-port' for _nat_ in pf.conf, the configuration file of FreeBSD PF pro
 	int_if="em1"
 	nat  on $ext_if inet  from $int_if:network to any -> ($ext_if) static-port
 
-In my first try with 4 NFS clients (Solaris 8), the first 2 clients lose server responses after the 3rd and the 4th client mount the NFS.
-A very bad instance may occur: all clients use the same port.
+In my first try with 4 NFS clients (Solaris 8), the first 2 clients lose server responses after the 3rd and the 4th client mount the NFS. A very bad instance may occur: all clients use the same source port number.
 
 
 ### NAT + priviledged ports, in FreeBSD PF
@@ -172,9 +171,54 @@ Check the translated results of NFS connections:
 It happened to be a case that all clients assign port 1023 as source port. After NAT, the source ports for NFS clients 1-4 are translated to 246, 846, 654 and 127 on em0 respectively.
 
 
+Without the line `nat ... port 111:1023` in pf.conf, the translated results may look like
+
+	root@fbsd_pf:/etc # pfctl -ss | sort | grep ESTA
+	all tcp 192.168.2.11:2049 <- 192.168.1.10:738       ESTABLISHED:ESTABLISHED
+	all tcp 192.168.2.12:62929 (192.168.1.10:738) -> 192.168.2.11:2049       ESTABLISHED:ESTABLISHED
+
+The source port on em0 is 62929 (>=1024) in this case and NFS mount will get a 'Permission denied' message unless server's insecure option is enabled.
+
+
+### What if port range 111:1023 is not enough
+
+Addresses may be used for _nat_, too.
+
+	 nat on $ext_if inet  from $lan_nfs_cli    to $mainnas -> { 192.168.2.12, 192.168.2.13 } port 111:1023
+	 nat on $ext_if inet  from $int_if:network to any      -> ($ext_if)
+
+`192.168.2.13` is the alias of `192.168.2.12` in this experiment.
+
+
+Check the rule:
+
+	root@fbsd_pf:/etc # pfctl -sn
+	nat on em0 inet from 192.168.1.10 port 111:1023 to 192.168.2.11 -> { 192.168.2.12, 192.168.2.13 } port 111:1023 round-robin
+	nat on em0 inet from 192.168.1.11 port 111:1023 to 192.168.2.11 -> { 192.168.2.12, 192.168.2.13 } port 111:1023 round-robin
+	nat on em0 inet from 192.168.1.12 port 111:1023 to 192.168.2.11 -> { 192.168.2.12, 192.168.2.13 } port 111:1023 round-robin
+	nat on em0 inet from 192.168.1.13 port 111:1023 to 192.168.2.11 -> { 192.168.2.12, 192.168.2.13 } port 111:1023 round-robin
+	nat on em0 inet from 192.168.1.0/24 to any -> (em0) round-robin
+	nat on em0 inet from 192.168.1.0/24 to any -> (em0) round-robin
+
+
+The result of two mounts shows different IP:port can be used: `192.168.2.13:478` and `192.168.2.12:418`
+
+	root@fbsd_pf:/etc # pfctl -ss | sort | grep ESTA
+	all tcp 192.168.2.11:2049 <- 192.168.1.10:843       ESTABLISHED:ESTABLISHED
+	all tcp 192.168.2.13:478 (192.168.1.10:843) -> 192.168.2.11:2049       ESTABLISHED:ESTABLISHED
+
+	   (... NFS client umounts and then re-mounts.)
+
+	root@fbsd_pf:/etc # pfctl -ss | sort | grep ESTA
+	all tcp 192.168.2.11:2049 <- 192.168.1.10:838       ESTABLISHED:ESTABLISHED
+	all tcp 192.168.2.12:418 (192.168.1.10:838) -> 192.168.2.11:2049       ESTABLISHED:ESTABLISHED
+
+
+
 ## References
 * [NFS server behind a PF firewall](http://blog.e-shell.org/227), via Google:<nfs client behind nat\>
 * [Mount NFS export for machine behind a NAT](https://blog.bigon.be/2013/02/08/mount-nfs-export-for-machine-behind-a-nat/), via google:<nfs client behind nat\>
+* [Cloud NAT address and port concepts | Google Cloud](https://cloud.google.com/nat/docs/ports-and-addresses), via google:<nfs client nat\>
 * [FreeBSD nat via PF: how to change from random UDP ports to incremental?](https://serverfault.com/questions/67249/freebsd-nat-via-pf-how-to-change-from-random-udp-ports-to-incremental), via google:<pf nat static-port\>
 * [pfctl: Invalid argument. when using add with some netmasks](http://openbsd-archive.7691.n7.nabble.com/6-6-pfctl-Invalid-argument-when-using-add-with-some-netmasks-td381455.html), via google:<freebsd pf 192.168 become "64.168"\>
 
