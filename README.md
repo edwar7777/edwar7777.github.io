@@ -7,21 +7,21 @@ The NAT runs on a workstation with FreeBSD or Linux. Routed or Bridged network i
 After NAT, the source port usually >=1024, while NFS server may allow only priviledged source ports (port<1024).
 
 
-# Possible approaches
+## Possible approaches
 
-## Option 'insecure' in /etc/exports
+### Option 'insecure' in /etc/exports
 The simplest solution is to turn on the 'insecure' option in /etc/exports of NFS servers if no other concern exists. The option 'insecure' makes the server permit source port >=1024.
 
 
-## NFS proxy, like NFS-ganesha
+### NFS proxy, like NFS-ganesha
 I never success to use NFS-ganesha proxy FSAL to access NFS outside the workstation for some errors (OS: CentOS 7). To solve it beyonded my capability then, honestly.
 
 
-## NFS re-export, by user mode nfs server, like unfsd
+### NFS re-export, by user mode nfs server, like unfsd
 I never try it as some discussions in [NFS export of unsupported filesystems (e.g. NFS re-export)](https://groups.google.com/forum/#!topic/alt.os.linux/oXW6JjIcqAw) mention lock-down may occurs.
 
 
-## NAT + static-port, in FreeBSD PF
+### NAT + static-port, in FreeBSD PF
 Add 'static-port' for _nat_ in pf.conf, the configuration file of FreeBSD PF program. The option keeps source port number unchanged.
 
 /etc/pf.conf:
@@ -34,7 +34,7 @@ In my first try with 4 NFS clients (Solaris 8), the first 2 clients lose server 
 A very bad instance may occur: all clients use the same port.
 
 
-## NAT + priviledged ports, in FreeBSD PF
+### NAT + priviledged ports, in FreeBSD PF
 Add an extra _nat_ with priviledged ports before the ordinary _nat_ statement:
 
 	 lan_nfs_cli = "{ 192.168.1.10, 192.168.1.11, 192.168.1.12, 192.168.1.13 } port 111:1023"
@@ -45,7 +45,7 @@ Add an extra _nat_ with priviledged ports before the ordinary _nat_ statement:
 The available source ports are mcuh less than the insecure option of NFS server. Thus this approach is suitable when the count of clients behind NAT is not large.
 
 
-# An example for NAT + priviledged ports
+## An example for NAT + priviledged ports
 
 Network hierarchy
 
@@ -54,16 +54,16 @@ Network hierarchy
   - IP=192.168.1.10--13. NFS clients 1--4
 
 
-## construct the hierarchy by QEMU
+### construct the hierarchy by QEMU
 
 QEMU-4.1.0 was adopted to test the idea.
 
 * Host: FreeBSD 12.1
 * Guest 1: NFS server, Debian
-* Guest 2: NAT, FreeBSD 12.1-RELEASE.
+* Guest 2: NAT-machine, FreeBSD 12.1-RELEASE.
 * Guest 3-6: NFS clients 1-4, by FreeBSD bootonly installation CD (12.1-RELEASE-amd64) or Solaris 8
 
-Guest 2 invocation:
+NAT-machine(Guest 2) invocation:
 
 	qemu-system-x86_64 \
 	       ...
@@ -74,11 +74,12 @@ Guest 2 invocation:
 	    -nic socket,listen=:20004 \
 	      ...
 
-`-nic socket` appears 4 times with different ports for guests 3-6. The action creates 4 network interfaces, em1-4, which then become members of a virtual bridge in guest 2.
+`-nic socket` appears 4 times with different ports for NFS clients 1-4. The action creates 4 network interfaces, em1-4, which then become members of a virtual bridge in NAT-machine.
 
-Note: the `pfctl` program of guest 2 FreeBSD may need to be built with -O0 option to work in early version of QEMU, including QEMU-4.1.0. Or 192.168.x.x will become 64.168.x.x and thus not work at all. To build it elsewhere and transfer binary executable file into guest 2 is ok.
+Note: the `pfctl` program of NAT-machine FreeBSD may need to be built with -O0 option to work in early version of QEMU, including QEMU-4.1.0. Or 192.168.x.x will become 64.168.x.x and thus not work at all. To build it elsewhere and transfer binary executable file into NAT-machine is ok.
 
-Guest 3 invocation:
+
+NFS client 1 invocation:
 
 	qemu-system-x86_64 \
 	      ...
@@ -86,10 +87,10 @@ Guest 3 invocation:
 	    -cdrom ...
 	      ...
 
-Guest 4-6 are similar except port number of `connect=...`. For qemu-sparc, `model=lance` can be inserted as an argument if necessary.
+NFS clients 2-4 are similar except port number of `connect=...`. For qemu-sparc, `model=lance` can be inserted as an argument if necessary.
 
 
-## Guest 2, NAT configurations
+### NAT-machine configurations
 
 The following are related configurations.
 
@@ -114,7 +115,7 @@ The following are related configurations.
 	ifconfig_em4="inet 192.168.1.34/24"
 	  ...
 
-The IP addresses for em1-4 are for dhcpd. Not a good setting because dhcpd blames on em1-4. But eventually it works. The gateway of guest 3-6 (192.168.1.10--13) is bridge0 (192.168.1.1). 
+The IP addresses for em1-4 are for dhcpd. Not a good setting because dhcpd blames on em1-4. But eventually it works. The gateway of NFS clients 1-4 (192.168.1.10--13) is bridge0 (192.168.1.1). 
 
 /etc/pf.conf:
 
@@ -135,11 +136,9 @@ The IP addresses for em1-4 are for dhcpd. Not a good setting because dhcpd blame
 	pass out all
 
 
-## Check the result of NAT settings
+### Check the result of NAT settings
 
-When I took the experiment, I was not sure the maximum of priviledged ports is 1023 or 1024. The correct one is 1023.
-
-All the results below were gotten when the port range was set to a wrong range 111:1024. 
+All the results below were gotten when the port range was set to 111:1024 which is wrong. The correct range is 111:1023. 
 
 Check the rules of PF:
 
@@ -170,10 +169,10 @@ Check the translated results of NFS connections:
 	all tcp 192.168.2.12:654 (192.168.1.12:1023) -> 192.168.2.11:2049       ESTABLISHED:ESTABLISHED
 	all tcp 192.168.2.12:846 (192.168.1.11:1023) -> 192.168.2.11:2049       ESTABLISHED:ESTABLISHED
 
-It happened to be a case that all clients assign port 1023 as source port. After NAT, the source ports of NFS clients 1-4 are translated to 246, 846, 654 and 127 on em0 respectively.
+It happened to be a case that all clients assign port 1023 as source port. After NAT, the source ports for NFS clients 1-4 are translated to 246, 846, 654 and 127 on em0 respectively.
 
 
-# References
+## References
 * [NFS server behind a PF firewall](http://blog.e-shell.org/227), via Google:<nfs client behind nat\>
 * [Mount NFS export for machine behind a NAT](https://blog.bigon.be/2013/02/08/mount-nfs-export-for-machine-behind-a-nat/), via google:<nfs client behind nat\>
 * [FreeBSD nat via PF: how to change from random UDP ports to incremental?](https://serverfault.com/questions/67249/freebsd-nat-via-pf-how-to-change-from-random-udp-ports-to-incremental), via google:<pf nat static-port\>
