@@ -4,7 +4,7 @@ Scenario: The NFS server is accessible in the intranet. But some clients behind 
 
 The NAT runs on a workstation with FreeBSD or Linux. Routed or Bridged network is not preferred in order to keep the clients invisible from the intranet.
 
-After NAT, the source port usually >=1024, while NFS server may allow only priviledged source ports (port<1024).
+After NAT, the source port usually >=1024, while NFS server may allow only privileged source ports (port<1024).
 
 
 ## Possible approaches
@@ -33,8 +33,8 @@ Add 'static-port' for _nat_ in pf.conf, the configuration file of FreeBSD PF pro
 In my first try with 4 NFS clients (Solaris 8), the first 2 clients lose server responses after the 3rd and the 4th client mount the NFS. A very bad instance may occur: all clients use the same source port number.
 
 
-### NAT + priviledged ports, in FreeBSD PF
-Add an extra _nat_ with priviledged ports before the ordinary _nat_ statement:
+### NAT + privileged ports, in FreeBSD PF
+Add an extra _nat_ with privileged ports before the ordinary _nat_ statement:
 
 	 lan_nfs_cli = "{ 192.168.1.10, 192.168.1.11, 192.168.1.12, 192.168.1.13 } port 111:1023"
 	 mainnas="192.168.2.11"
@@ -44,7 +44,7 @@ Add an extra _nat_ with priviledged ports before the ordinary _nat_ statement:
 The available source ports are mcuh less than the insecure option of NFS server. Thus this approach is suitable when the count of clients behind NAT is not large.
 
 
-## An example for NAT + priviledged ports
+## An example for NAT + privileged ports
 
 Network hierarchy
 
