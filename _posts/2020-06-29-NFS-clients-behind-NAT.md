@@ -2,7 +2,7 @@
 layout: post
 title:  "NFS clients behind NAT, for FreeBSD PF firewall"
 date:   2020-06-29 19:00:04 +0800
-categories: jekyll update
+categories: NFS NAT FreeBSD
 ---
 # NFS clients behind NAT
 
