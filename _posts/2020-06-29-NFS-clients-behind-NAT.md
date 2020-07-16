@@ -1,3 +1,9 @@
+---
+layout: post
+title:  "NFS clients behind NAT, for FreeBSD PF firewall"
+date:   2020-06-29 19:00:04 +0800
+categories: jekyll update
+---
 # NFS clients behind NAT
 
 Scenario: The NFS server is accessible in the intranet. But some clients behind the NAT are Sparc machines with Solaris 2.6 / 7 / 8 installed. Therefore, neither CIFS (Samba) mount nor NFSv4 can be adopted. The only option is NFS with version<=3.
@@ -218,7 +224,7 @@ The result of two mounts shows different IP:port can be used: `192.168.2.13:478`
 ## References
 * [NFS server behind a PF firewall](http://blog.e-shell.org/227), via Google:<nfs client behind nat\>
 * [Mount NFS export for machine behind a NAT](https://blog.bigon.be/2013/02/08/mount-nfs-export-for-machine-behind-a-nat/), via google:<nfs client behind nat\>
-* [Cloud NAT address and port concepts | Google Cloud](https://cloud.google.com/nat/docs/ports-and-addresses), via google:<nfs client nat\>
+* [Cloud NAT address and port concepts \| Google Cloud](https://cloud.google.com/nat/docs/ports-and-addresses), via google:<nfs client nat\>
 * [FreeBSD nat via PF: how to change from random UDP ports to incremental?](https://serverfault.com/questions/67249/freebsd-nat-via-pf-how-to-change-from-random-udp-ports-to-incremental), via google:<pf nat static-port\>
 * [pfctl: Invalid argument. when using add with some netmasks](http://openbsd-archive.7691.n7.nabble.com/6-6-pfctl-Invalid-argument-when-using-add-with-some-netmasks-td381455.html), via google:<freebsd pf 192.168 become "64.168"\>
 
