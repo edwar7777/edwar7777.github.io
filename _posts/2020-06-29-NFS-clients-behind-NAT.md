@@ -6,7 +6,7 @@ categories: NFS NAT FreeBSD
 ---
 # NFS clients behind NAT
 
-Scenario: The NFS server is accessible in the intranet. But some clients behind the NAT are Sparc machines with Solaris 2.6 / 7 / 8 installed. Therefore, neither CIFS (Samba) mount nor NFSv4 can be adopted. The only option is NFS with version<=3.
+Concerns: The NFS server is accessible in the intranet. But some clients behind the NAT are Sparc machines with Solaris 2.6 / 7 / 8 installed. Therefore, neither CIFS (Samba) mount nor NFSv4 can be adopted. The only option is NFS with version<=3.
 
 The NAT runs on a workstation with FreeBSD or Linux. Routed or Bridged network is not preferred in order to keep the clients invisible from the intranet.
 
