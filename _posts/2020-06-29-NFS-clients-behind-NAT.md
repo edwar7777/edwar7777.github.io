@@ -4,11 +4,11 @@ title:  "NFS clients behind NAT, for FreeBSD PF firewall"
 date:   2020-06-29 19:00:04 +0800
 categories: NFS NAT FreeBSD
 ---
-# NFS clients behind NAT
+# NFS clients behind NAT, for FreeBSD PF firewall
 
-Concerns: The NFS server is accessible in the intranet. But some clients behind the NAT are Sparc machines with Solaris 2.6 / 7 / 8 installed. Therefore, neither CIFS (Samba) mount nor NFSv4 can be adopted. The only option is NFS with version<=3.
+The NFS server is accessible in the intranet. A NAT runs on a workstation with FreeBSD or Linux, which is a node in the intranet. The NFS clients are in a LAN behind the NAT. Routed or Bridged network is not preferred in order to keep the clients invisible outside the NAT.
 
-The NAT runs on a workstation with FreeBSD or Linux. Routed or Bridged network is not preferred in order to keep the clients invisible from the intranet.
+Some clients behind the NAT are SPARC machines with Solaris 2.6 / 7 / 8 installed. Therefore, neither CIFS (Samba) mount nor NFSv4 can be adopted. The only option is NFS with version<=3.
 
 After NAT, the source port usually >=1024, while NFS server may allow only privileged source ports (port<1024).
 
