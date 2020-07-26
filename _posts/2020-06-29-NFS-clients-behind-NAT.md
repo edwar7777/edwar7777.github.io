@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  Multiple NFS clients behind NAT, for FreeBSD PF firewall
-date:   2020-07-26 17:00:00 +0800
+date:   2020-07-27 01:30 +0800
 categories: NFS NAT FreeBSD
 ---
 
@@ -16,6 +16,8 @@ A problem is: After NAT, the source port usually >=1024, while NFS server may al
 
 ### Option 'insecure' in /etc/exports
 The simplest solution is to turn on the 'insecure' option in /etc/exports of NFS servers if no other concern exists. The option 'insecure' makes the server permit source port >=1024.
+
+For our case, security is a concern. We do not want any non-administrative users to privately mount the NFS server. Thus the _insecure_ option is not in our list.
 
 
 ### NFS proxy, like NFS-ganesha
@@ -35,23 +37,25 @@ Add 'static-port' for _nat_ in pf.conf, the configuration file of FreeBSD PF pro
 	int_if="em1"
 	nat  on $ext_if inet  from $int_if:network to any -> ($ext_if) static-port
 
-In my first try with 4 NFS clients (Solaris 8), the first 2 clients lose server responses after the 3rd and the 4th client mount the NFS. A very bad instance may occur: all clients use the same source port number.
+If there is only single client behind NAT, this is a good solution. Some virtual machine software programs seem to solve VM's NFS-mount problem by this approach.
+
+However, the same approach may not always work for multiple clients. In my first try with 4 NFS clients (Solaris 8), the first 2 clients lose server responses after the 3rd and the 4th client mount the NFS. A very bad instance sometimes occurs: all clients use the same source port number.
 
 
 ### NAT + privileged ports, in FreeBSD PF
-Add an extra _nat_ with privileged ports before the ordinary _nat_ statement:
+Add an extra _nat_ translating only privileged ports before the ordinary major _nat_ statement:
 
 	 lan_nfs_cli = "{ 192.168.1.10, 192.168.1.11, 192.168.1.12, 192.168.1.13 } port 111:1023"
 	 mainnas="192.168.2.11"
 	 nat on $ext_if inet  from $lan_nfs_cli    to $mainnas -> ($ext_if) port 111:1023
 	 nat on $ext_if inet  from $int_if:network to any      -> ($ext_if)
 
-The available source ports are mcuh less than the insecure option of NFS server. Thus this approach is suitable when the count of clients behind NAT is not large.
+The available source ports are much less than the _insecure_ option of NFS server. Thus this approach is suitable when the count of clients behind NAT is not large.
 
 
 ## An example for NAT + privileged ports
 
-Network hierarchy
+Network hierarchy for the experiment:
 
 * IP=192.168.2.11, NFS server
 * IP=192.168.2.12. NAT
@@ -187,7 +191,7 @@ The source port on em0 is 62929 (>=1024) in this case and NFS mount will get a '
 
 ### What if port range 111:1023 is not enough
 
-Addresses may be used for _nat_, too.
+Addresses may be used for the extra _nat_, too, as long as the network administrators allow.
 
 	 nat on $ext_if inet  from $lan_nfs_cli    to $mainnas -> { 192.168.2.12, 192.168.2.13 } port 111:1023
 	 nat on $ext_if inet  from $int_if:network to any      -> ($ext_if)
