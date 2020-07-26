@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  Multiple NFS clients behind NAT, for FreeBSD PF firewall
-date:   2020-06-29 19:00:04 +0800
+date:   2020-07-26 17:00:00 +0800
 categories: NFS NAT FreeBSD
 ---
 
