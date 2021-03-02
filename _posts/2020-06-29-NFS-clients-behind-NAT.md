@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  Multiple NFS clients behind NAT, for FreeBSD PF firewall
-<!--date:  2020-07-27 01:30 +0800 -->
+<!--date:  2021-03-02 14:05 +0800 -->
 categories: NFS NAT FreeBSD
 ---
 
@@ -96,6 +96,8 @@ NFS client 1 invocation:
 	      ...
 
 NFS clients 2-4 are similar except port number of `connect=...`. For qemu-sparc, `model=lance` can be inserted as an argument if necessary.
+
+Updates: although `-nic socket` was used for experiments, simliar network hierarchy constructed by libvirt bridge also works fine.
 
 
 ### NAT-machine configurations
@@ -223,6 +225,35 @@ The result of two mounts shows different IP:port can be used: `192.168.2.13:478`
 	all tcp 192.168.2.12:418 (192.168.1.10:838) -> 192.168.2.11:2049       ESTABLISHED:ESTABLISHED
 
 
+### Linux iptables experiment
+
+According to SNAT --to-source section in [Ubuntu Manpage: iptables](https://manpages.ubuntu.com/manpages/precise/en/man8/iptables.8.html):
+> If no port range  is  specified,  then  source  ports
+> below  512  will  be  mapped  to  other ports below 512: those between 512 and 1023
+> inclusive will be mapped to ports below 1024, and other ports  will  be  mapped  to
+> 1024 or above. Where possible, no port alteration will occur.
+
+New enough iptables should reserve privileged ports natively.
+
+
+With similar experiment settings to the previous:
+
+* Host: Windows 10, QEMU 5.1.92
+* Guest 1: NFS server, Debian 4.9.144-3
+* Guest 2: NAT-machine, Debian 4.9.144-3, no entry at all in /etc/exports
+* Guest 3-4: NFS clients 1 and 2, Debian 4.9.144-3 and FreeBSD bootonly installation CD (12.2-RELEASE-i386) respectively
+
+
+The NAT settings (4 commands only):
+
+	echo 1 > /proc/sys/net/ipv4/ip_forward
+	iptables -t nat -A POSTROUTING -o ens3 -j MASQUERADE
+	iptables -A FORWARD -i ens3 -o br0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+	iptables -A FORWARD -i br0 -o ens3 -j ACCEPT
+
+
+Then the clients can mount the shares from the NFS server simultaneously in my experiment.
+
 
 ## References
 * [NFS server behind a PF firewall](http://blog.e-shell.org/227), via Google:<nfs client behind nat\>
@@ -230,5 +261,13 @@ The result of two mounts shows different IP:port can be used: `192.168.2.13:478`
 * [Cloud NAT address and port concepts \| Google Cloud](https://cloud.google.com/nat/docs/ports-and-addresses), via google:<nfs client nat\>
 * [FreeBSD nat via PF: how to change from random UDP ports to incremental?](https://serverfault.com/questions/67249/freebsd-nat-via-pf-how-to-change-from-random-udp-ports-to-incremental), via google:<pf nat static-port\>
 * [pfctl: Invalid argument. when using add with some netmasks](http://openbsd-archive.7691.n7.nabble.com/6-6-pfctl-Invalid-argument-when-using-add-with-some-netmasks-td381455.html), via google:<freebsd pf 192.168 become "64.168"\>
+* [Quick-Tip: Linux NAT in Four Steps using iptables](https://www.revsys.com/writings/quicktips/nat.html), via google:<nat simple example iptables\>
+
+
+## Updates
+* 2021-03-02:
+  * simple Linux iptables NAT settings that work for this topic.
+  * libvirt bridge result similar to `-nic socket`.
 
 [//]: <> (__END__)
+
