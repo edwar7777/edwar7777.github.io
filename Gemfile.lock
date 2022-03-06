@@ -14,9 +14,8 @@ GEM
       execjs
     coffee-script-source (1.11.1)
     colorator (1.1.0)
-    commonmarker (0.17.13)
-      ruby-enum (~> 0.5)
-    concurrent-ruby (1.1.8)
+    commonmarker (0.23.4)
+    concurrent-ruby (1.1.9)
     dnsruby (1.61.5)
       simpleidn (~> 0.1)
     em-websocket (0.5.2)
@@ -114,7 +113,7 @@ GEM
       commonmarker (~> 0.14)
       jekyll (>= 3.7, < 5.0)
     jekyll-commonmark-ghpages (0.1.6)
-      commonmarker (~> 0.17.6)
+      commonmarker (~> 0.23.4)
       jekyll-commonmark (~> 1.2)
       rouge (>= 2.0, < 4.0)
     jekyll-default-layout (0.1.4)
@@ -231,8 +230,6 @@ GEM
       ffi (~> 1.0)
     rexml (3.2.5)
     rouge (3.26.0)
-    ruby-enum (0.9.0)
-      i18n
     ruby2_keywords (0.0.4)
     rubyzip (2.3.0)
     safe_yaml (1.0.5)
@@ -268,6 +265,7 @@ PLATFORMS
   x64-mingw32
 
 DEPENDENCIES
+  commonmarker (>= 0.23.4)
   github-pages
   jekyll-feed (~> 0.12)
   kramdown (>= 2.3.1)
